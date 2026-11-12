@@ -1,46 +1,19 @@
 # Contas em Dia
 
-MVP em JavaScript para planejamento financeiro colaborativo de uma família, baseado na proposta em [`docs/PropostaSistema.pdf`](./docs/PropostaSistema.pdf).
+Protótipo interativo para demonstrar gestão financeira familiar, baseado na proposta em [`docs/PropostaSistema.pdf`](./docs/PropostaSistema.pdf).
 
-## O que já funciona
+## Demonstração no GitHub Pages
 
-- Entradas individuais com perfis de **administrador** e **participante**.
-- Lançamentos compartilhados de receitas e despesas com descrição, valor, data, categoria e observações.
-- Orçamento mensal por categoria; administradores podem alterar limites.
-- Painel com receitas, gastos, saldo, histórico, progresso por categoria e alertas a partir de 80% do limite.
-- Acompanhamento visual de metas familiares.
-- Atualização automática do painel a cada 20 segundos para manter diferentes clientes sincronizados.
+A versão do GitHub Pages é um site estático: a interface e todas as interações de demonstração são executadas no navegador. Não é necessário iniciar um servidor Node.js ou configurar uma API.
 
-## Estrutura
+1. Envie o projeto para a branch `main` do GitHub.
+2. No repositório, abra **Settings → Pages** e, em **Build and deployment → Source**, selecione **GitHub Actions**.
+3. Aguarde a conclusão do fluxo **Publicar demonstração no GitHub Pages** na aba **Actions**.
+4. Acesse o endereço informado na publicação. Para um repositório de projeto, o endereço normalmente termina em `/<nome-do-repositório>/`.
 
-```text
-apps/
-  api/
-    src/
-      domain.js       # regras de orçamento, lançamentos e validações
-      server.js       # API HTTP, autenticação e arquivos estáticos
-      store.js        # persistência local e dados de demonstração
-    test/
-      domain.test.js
-  web/
-    app.js            # interface e comunicação com a API
-    index.html
-    styles.css
-docs/
-  PropostaSistema.pdf
-```
+O fluxo [`deploy-pages.yml`](./.github/workflows/deploy-pages.yml) publica somente `apps/web`, sem enviar a API ou os dados de execução ao Pages.
 
-O navegador comunica-se com a API HTTP; o serviço mantém os dados da família em um arquivo local. Essa separação permite que vários clientes compartilhem o mesmo orçamento quando acessam a mesma instância do serviço. Para executar mais de uma instância em produção, substitua o armazenamento local por um banco de dados compartilhado e adote notificações distribuídas.
-
-## Executar localmente
-
-Requer Node.js 20 ou superior. Não há dependências externas.
-
-```bash
-npm start
-```
-
-Abra <http://localhost:3000>. Contas de demonstração:
+### Contas fictícias
 
 | Perfil | E-mail | Senha |
 |---|---|---|
@@ -48,16 +21,43 @@ Abra <http://localhost:3000>. Contas de demonstração:
 | Participante | `jonas@contas.local` | `familia123` |
 | Participante | `rafael@contas.local` | `familia123` |
 
-O estado inicial é criado em `apps/api/data/state.json` na primeira execução. Para alterar a senha das contas de demonstração antes dessa inicialização, defina `DEMO_PASSWORD`. A porta padrão é `3000` e pode ser alterada com `PORT`.
+O perfil administrador pode alterar limites de categorias. Todos os perfis podem registrar receitas e despesas e acompanhar o orçamento, os alertas, as movimentações e a meta familiar. **Restaurar demonstração** repõe os dados fictícios originais naquele navegador.
 
-## Testes
+## Dados e limites da versão demonstrativa
+
+Os lançamentos e limites alterados são salvos no `localStorage` do navegador. Isso permite repetir os percursos, inclusive após atualizar a página, e sincroniza alterações entre abas abertas no mesmo navegador. Os dados **não** são compartilhados entre dispositivos, navegadores ou pessoas; cada sessão de teste começa com sua própria cópia. Para repetir um cenário, restaure a demonstração.
+
+As credenciais e regras de acesso são públicas no código-fonte e servem somente para simular a experiência. Qualquer pessoa pode inspecionar ou modificar os dados locais. Não use informações financeiras, credenciais pessoais ou dados reais de participantes nos testes. A demonstração não possui autenticação segura, servidor compartilhado, sincronização entre dispositivos ou integração com bancos/Open Finance.
+
+## Desenvolvimento e testes locais
+
+Requer Node.js 20 ou superior; não há dependências externas.
 
 ```bash
 npm test
+npm start
 ```
 
-## Limites e próximos passos
+`npm start` inicia o servidor local do protótipo em <http://localhost:3000>. A interface utiliza o mesmo modo de demonstração com dados no navegador. O código de API em `apps/api` permanece como protótipo de arquitetura, mas não é usado pela publicação no GitHub Pages.
 
-Este é um protótipo educacional: as sessões existem apenas na memória do processo, as credenciais são contas fictícias e o arquivo JSON não suporta múltiplas instâncias nem garante a durabilidade de um banco de produção. Antes de usar dados financeiros reais, implemente autenticação e recuperação de conta adequadas, autorização por família, banco de dados transacional, auditoria, backups, proteção contra abuso e revisão de segurança/privacidade.
+## Estrutura
 
-Open Finance, importação bancária, notificações push, criação/convite de membros, contribuições nas metas e sincronização em tempo real não estão implementados. A importação financeira deve ser feita por integração autorizada com provedor compatível, nunca pela coleta de senhas bancárias.
+```text
+apps/
+  api/
+    src/              # API HTTP e regras do protótipo de servidor
+    test/             # testes das regras de negócio da API
+  web/
+    app.js            # interface e percursos interativos
+    demo-store.js     # autenticação fictícia e persistência local da demonstração
+    index.html
+    styles.css
+    test/             # testes da demonstração estática
+docs/
+  PropostaSistema.pdf
+.github/
+  workflows/
+    deploy-pages.yml  # publicação automática no GitHub Pages
+```
+
+Para oferecer contas reais e dados familiares compartilhados entre dispositivos, seria necessário hospedar a API e um banco de dados persistente em um serviço próprio; o GitHub Pages sozinho não executa código de servidor.

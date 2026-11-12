@@ -37,3 +37,15 @@ Preserve os registros anteriores. Escreva em português brasileiro; mantenha nom
 > Configure o journal.txt mara ser um markdown .md mais legível e adequado para um relatório técnico/acadêmico. Edite inclusive a parte de cima da barra apenas desta vez, para que as próximas alterações sejam documentadas corretamente. Aproveite e traduza as palavras em inglês que coloquei originalmente para tornar a documentação mais consistente para professora e monitores brasileiros que irão analisar o fluxo de trabalho
 
 **Ações e resultados:** O arquivo `journal.txt` foi renomeado para `journal.md` e reorganizado como diário técnico-acadêmico em Markdown. Os campos e as instruções de preenchimento foram traduzidos para português, com orientações para padronizar os próximos registros. O registro desta interação foi acrescentado; os campos de autoria e intenção foram deixados em branco para preenchimento pelo(a) estudante.
+
+### Registro 3 — 11 de novembro de 2026, 18h19
+
+**Autor(a):**
+
+**Intenção do(a) estudante:**
+
+**Solicitação enviada:**
+
+> Ajuste a implementação para que ela seja hospedável no Github Pages. Ela não precisa funcionar da maneira que funcionaria para o usuário comum, mas é necessário que seja possível simular todas as funcionalidades, mesmo que com usuários e dados fictícios, afim de demonstrar o funcionamento interativo do sistema, e utilizá-lo em testes de percurso cognitivo com usuários reais que tenham em mãos as credenciais dos usuários falsos
+
+**Ações e resultados:** A interface foi adaptada para executar como aplicação estática, sem depender da API. Foram implementados perfis fictícios, lançamentos, alteração de limites, alertas, metas e persistência local no navegador, incluindo restauração dos dados de demonstração e atualização entre abas. Foi criado um fluxo de publicação automática no GitHub Pages e atualizada a documentação sobre implantação, credenciais e limitações dos dados locais. Os dez testes automatizados passaram; o login e o registro de lançamento também foram verificados no navegador.

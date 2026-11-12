@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#174d3a">
     <title>Contas em Dia — finanças da família</title>
-    <link rel="stylesheet" href="/styles.css">
-    <script type="module" src="/app.js"></script>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.js"></script>
   </head>
   <body>
     <main id="login-view" class="login-view">
       <section class="login-card" aria-labelledby="login-title">
-        <a class="brand" href="/" aria-label="Contas em Dia, página inicial">
+        <a class="brand" href="./" aria-label="Contas em Dia, página inicial">
           <span class="brand-mark" aria-hidden="true">C</span>
           <span>contas <strong>em dia</strong></span>
         </a>
@@ -32,7 +32,7 @@
 
     <div id="app-view" class="app-view" hidden>
       <header class="topbar">
-        <a class="brand" href="/" aria-label="Contas em Dia">
+        <a class="brand" href="./" aria-label="Contas em Dia">
           <span class="brand-mark" aria-hidden="true">C</span>
           <span>contas <strong>em dia</strong></span>
         </a>
@@ -40,6 +40,7 @@
           <span id="family-name" class="family-name"></span>
           <span id="member-name" class="member-name"></span>
           <span id="member-role" class="role-badge"></span>
+          <button id="reset-demo-button" class="button button-quiet" type="button">Restaurar demonstração</button>
           <button id="logout-button" class="button button-quiet" type="button">Sair</button>
         </div>
       </header>
@@ -51,7 +52,7 @@
             <h1>Olá, <span id="greeting-name"></span> <span aria-hidden="true">👋</span></h1>
             <p id="month-label" class="muted"></p>
           </div>
-          <div class="sync-status"><span class="status-dot"></span> Dados compartilhados</div>
+          <div class="sync-status"><span class="status-dot"></span> Demonstração neste dispositivo</div>
         </section>
 
         <section id="notifications" class="notifications" aria-live="polite" hidden></section>
@@ -138,7 +139,7 @@
                 <p class="eyebrow">MOVIMENTAÇÕES</p>
                 <h2>Últimos lançamentos</h2>
               </div>
-              <span class="panel-caption">Compartilhados pela família</span>
+              <span class="panel-caption">Exibidos para os perfis fictícios</span>
             </div>
             <div id="transaction-list" class="transaction-list"></div>
           </section>
@@ -155,7 +156,7 @@
             <p class="goal-note">Pequenos passos de cada pessoa ajudam a chegar mais longe.</p>
           </section>
         </div>
-        <p class="dashboard-footnote">Os dados são atualizados automaticamente. Este protótipo não se conecta a bancos.</p>
+        <p class="dashboard-footnote">Dados fictícios salvos apenas neste navegador. As alterações não são sincronizadas entre dispositivos. Não use dados financeiros reais.</p>
       </main>
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </div>

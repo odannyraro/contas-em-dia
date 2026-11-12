@@ -1,11 +1,21 @@
+import {
+  addDemoTransaction,
+  DEMO_STORAGE_KEY,
+  getDemoOverview,
+  initializeDemoData,
+  resetDemoData,
+  signInDemoUser,
+  updateDemoCategoryBudget
+} from './demo-store.js';
+
 const loginView = document.querySelector('#login-view');
 const appView = document.querySelector('#app-view');
 const loginForm = document.querySelector('#login-form');
 const transactionForm = document.querySelector('#transaction-form');
 const loginError = document.querySelector('#login-error');
 const transactionError = document.querySelector('#transaction-error');
-const tokenKey = 'contas-em-dia-token';
-let token = sessionStorage.getItem(tokenKey);
+const userKey = 'contas-em-dia-demo-user-v1';
+let userId = sessionStorage.getItem(userKey);
 let overview;
 let toastTimeout;
 
@@ -23,25 +33,18 @@ function dateLabel(value) {
   }).format(new Date(`${value}T12:00:00`));
 }
 
+function todayLocal() {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 10);
+}
+
 function element(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
-}
-
-async function api(path, options = {}) {
-  const headers = new Headers(options.headers);
-  if (options.body) headers.set('Content-Type', 'application/json');
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-
-  const response = await fetch(path, { ...options, headers });
-  const payload = await response.json();
-  if (!response.ok) {
-    if (response.status === 401 && path !== '/api/login') signOut(false);
-    throw new Error(payload.error ?? 'Não foi possível concluir a operação.');
-  }
-  return payload;
 }
 
 function showToast(message) {
@@ -75,8 +78,7 @@ function setBudgetHeader(data) {
     data.user.role === 'ADMIN' ? 'ADMINISTRADOR' : 'PARTICIPANTE';
   document.querySelector('#greeting-name').textContent = data.user.name.split(' ')[0];
   document.querySelector('#month-label').textContent =
-    `${label.charAt(0).toUpperCase()}${label.slice(1)} · orçamento compartilhado`;
-
+    `${label.charAt(0).toUpperCase()}${label.slice(1)} · orçamento de demonstração`;
   document.querySelector('#budget-total').textContent = money(data.budget.limitCents);
   document.querySelector('#spent-total').textContent = money(data.budget.spentCents);
   document.querySelector('#spent-percent').textContent = `${data.budget.percent}% do orçamento`;
@@ -148,17 +150,14 @@ function renderCategories(categories, isAdmin) {
       button.type = 'submit';
       label.append(input);
       form.append(label, button);
-      form.addEventListener('submit', async (event) => {
+      form.addEventListener('submit', (event) => {
         event.preventDefault();
         const budgetCents = Math.round(Number(input.value) * 100);
         button.disabled = true;
         try {
-          await api(`/api/categories/${encodeURIComponent(category.id)}/budget`, {
-            method: 'PATCH',
-            body: JSON.stringify({ budgetCents })
-          });
-          await refresh();
-          showToast('Limite atualizado para toda a família.');
+          updateDemoCategoryBudget(userId, category.id, budgetCents);
+          refresh();
+          showToast('Limite atualizado nos dados deste navegador.');
         } catch (error) {
           showToast(error.message);
         } finally {
@@ -240,49 +239,29 @@ function render(data) {
     document.querySelector('#transaction-type').value === 'income';
 }
 
-async function refresh() {
-  const data = await api('/api/overview');
-  render(data);
+function refresh() {
+  render(getDemoOverview(userId));
   showApp();
 }
 
-function signOut(showMessage = true) {
-  const oldToken = token;
-  token = null;
-  sessionStorage.removeItem(tokenKey);
-  if (oldToken) {
-    fetch('/api/logout', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${oldToken}` }
-    }).then((response) => {
-      if (!response.ok) {
-        throw new Error(`O servidor respondeu ${response.status}.`);
-      }
-    }).catch((error) => {
-      console.error('Não foi possível invalidar a sessão no servidor.', error);
-      showToast('A sessão local foi removida; a sessão no servidor expirará em até 12 horas.');
-    });
-  }
-  showLogin(showMessage ? 'Você saiu da sua conta.' : '');
+function signOut(message = '') {
+  userId = null;
+  overview = null;
+  sessionStorage.removeItem(userKey);
+  showLogin(message);
 }
 
-loginForm.addEventListener('submit', async (event) => {
+loginForm.addEventListener('submit', (event) => {
   event.preventDefault();
   loginError.textContent = '';
   const formData = new FormData(loginForm);
   const button = loginForm.querySelector('button[type="submit"]');
   button.disabled = true;
   try {
-    const result = await api('/api/login', {
-      method: 'POST',
-      body: JSON.stringify({
-        email: formData.get('email'),
-        password: formData.get('password')
-      })
-    });
-    token = result.token;
-    sessionStorage.setItem(tokenKey, token);
-    await refresh();
+    const user = signInDemoUser(formData.get('email'), formData.get('password'));
+    userId = user.id;
+    sessionStorage.setItem(userKey, userId);
+    refresh();
   } catch (error) {
     showLogin(error.message);
   } finally {
@@ -290,34 +269,31 @@ loginForm.addEventListener('submit', async (event) => {
   }
 });
 
-transactionForm.addEventListener('submit', async (event) => {
+transactionForm.addEventListener('submit', (event) => {
   event.preventDefault();
   transactionError.textContent = '';
   const formData = new FormData(transactionForm);
   const type = formData.get('type');
   const button = transactionForm.querySelector('button[type="submit"]');
-  const body = {
+  const transaction = {
     description: formData.get('description'),
     type,
     amountCents: Math.round(Number(formData.get('amount')) * 100),
     date: formData.get('date'),
     notes: formData.get('notes')
   };
-  if (type === 'expense') body.categoryId = formData.get('categoryId');
+  if (type === 'expense') transaction.categoryId = formData.get('categoryId');
 
   button.disabled = true;
   try {
-    await api('/api/transactions', { method: 'POST', body: JSON.stringify(body) });
+    addDemoTransaction(userId, transaction);
     transactionForm.reset();
-    document.querySelector('#transaction-date').value =
-      new Date().toISOString().slice(0, 10);
+    document.querySelector('#transaction-date').value = todayLocal();
     document.querySelector('#transaction-type').dispatchEvent(new Event('change'));
-    if (overview) {
-      document.querySelector('#transaction-category').value =
-        overview.categories[0]?.id ?? '';
-    }
-    await refresh();
-    showToast('Lançamento compartilhado com a família.');
+    document.querySelector('#transaction-category').value =
+      overview?.categories[0]?.id ?? '';
+    refresh();
+    showToast('Lançamento registrado nos dados deste navegador.');
   } catch (error) {
     transactionError.textContent = error.message;
   } finally {
@@ -331,20 +307,40 @@ document.querySelector('#transaction-type').addEventListener('change', (event) =
   document.querySelector('#transaction-category').required = isExpense;
 });
 
-document.querySelector('#transaction-date').value = new Date().toISOString().slice(0, 10);
-document.querySelector('#logout-button').addEventListener('click', () => signOut());
-
-if (token) {
-  refresh().catch((error) => {
-    signOut(false);
-    showLogin(error.message);
-  });
-} else {
-  showLogin();
-}
-
-setInterval(() => {
-  if (token && !appView.hidden) {
-    refresh().catch((error) => showToast(error.message));
+document.querySelector('#transaction-date').value = todayLocal();
+document.querySelector('#logout-button').addEventListener('click', () => signOut('Você saiu da demonstração.'));
+document.querySelector('#reset-demo-button').addEventListener('click', () => {
+  if (!window.confirm('Restaurar os dados de demonstração neste navegador? Os lançamentos e limites alterados serão apagados.')) {
+    return;
   }
-}, 20_000);
+  try {
+    resetDemoData();
+    refresh();
+    showToast('Dados de demonstração restaurados.');
+  } catch (error) {
+    showToast(error.message);
+  }
+});
+
+window.addEventListener('storage', (event) => {
+  if (event.key === DEMO_STORAGE_KEY && userId && !appView.hidden) {
+    try {
+      refresh();
+    } catch (error) {
+      showToast(error.message);
+    }
+  }
+});
+
+try {
+  initializeDemoData();
+  if (userId) {
+    refresh();
+  } else {
+    showLogin();
+  }
+} catch (error) {
+  userId = null;
+  sessionStorage.removeItem(userKey);
+  showLogin(error.message);
+}
